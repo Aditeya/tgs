@@ -98,12 +98,6 @@ impl Display for OpCode {
     }
 }
 
-//impl ToString for OpCode {
-//    fn to_string(&self) -> String {
-//        format!("{self}")
-//    }
-//}
-
 impl TryFrom<[u8; 3]> for OpCode {
     type Error = Error;
 
