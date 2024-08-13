@@ -29,6 +29,10 @@ impl Tgs {
         }
     }
 
+    pub fn tgs_display(&self) -> [u8; 4] {
+        self.D
+    }
+
     pub fn register(&self, register: Register) -> u8 {
         match register {
             Register::R0 => self.R[0],
@@ -114,13 +118,13 @@ impl Tgs {
     fn get_cr_as_i8(&self) -> i8 {
         i8::from_le_bytes(self.CR.to_le_bytes())
     }
-    
+
     fn increment_pc(&mut self) {
         self.PC = self.PC.wrapping_add(1);
     }
 
     /// returns true if program_counter should be incremented
-    pub fn process_instruction(&mut self, op_code: OpCode) -> bool {
+    pub fn process_instruction(&mut self, op_code: OpCode) {
         match op_code {
             OpCode::ADD(t, sr) => *self.register_mut_ref(t) += *self.register_ref(sr),
             OpCode::SUB(t, sr) => *self.register_mut_ref(t) -= *self.register_ref(sr),
@@ -144,44 +148,42 @@ impl Tgs {
 
             OpCode::BR(v) => {
                 self.PC = v;
-                return false;
+                return;
             }
             OpCode::BE(v) => {
                 if self.get_cr_as_i8() == 0 {
                     self.PC = v;
-                    return false;
+                    return;
                 }
             }
             OpCode::BNE(v) => {
                 if self.get_cr_as_i8() != 0 {
                     self.PC = v;
-                    return false;
+                    return;
                 }
             }
             OpCode::BG(v) => {
                 if self.get_cr_as_i8() > 0 {
                     self.PC = v;
-                    return false;
+                    return;
                 }
             }
             OpCode::BL(v) => {
                 if self.get_cr_as_i8() < 0 {
                     self.PC = v;
-                    return false;
+                    return;
                 }
             }
         };
 
-        true
+        self.increment_pc();
     }
 
     pub fn run_program(&mut self, program: &[OpCode]) {
         while let Some(instruction) = program.get(self.PC as usize) {
             info!("{:03}: {}", self.PC + 1, instruction);
             std::thread::sleep(std::time::Duration::from_secs(1));
-            if self.process_instruction(*instruction) {
-                self.increment_pc();
-            }
+            self.process_instruction(*instruction)
         }
     }
 }

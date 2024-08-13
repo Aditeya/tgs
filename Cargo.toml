@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 color-eyre = "0.6.3"
 hex = "0.4.3"
+ratatui = "0.28.0"
 strum = { version = "0.26.3", features = ["derive"] }
 thiserror = "1.0.63"
 tracing = "0.1.40"

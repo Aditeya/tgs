@@ -2,6 +2,22 @@ use strum::{AsRefStr, EnumIter, FromRepr};
 
 use crate::error::Error;
 
+
+#[derive(Copy, Clone, Debug, AsRefStr, EnumIter, strum::Display, FromRepr)]
+#[repr(u8)]
+pub enum TgsDisplayValues {
+    N0 = 0b0000_0000,
+    N1 = 0b0000_0110,
+    N2 = 0b0101_1011,
+    N3 = 0b0100_1111,
+    N4 = 0b0110_0110,
+    N5 = 0b0110_1101,
+    N6 = 0b0111_1100,
+    N7 = 0b0000_0111,
+    N8 = 0b0111_1111,
+    N9 = 0b0110_1111,
+}
+
 #[derive(Copy, Clone, Debug, AsRefStr, EnumIter, strum::Display, FromRepr)]
 #[repr(u8)]
 pub enum Register {
