@@ -1,5 +1,5 @@
 use color_eyre::{eyre::eyre, Result};
-use tgs::op_code::OpCode;
+use tgs::{op_code::OpCode, tgs::Tgs};
 use tracing::info;
 
 fn main() -> Result<()> {
@@ -13,15 +13,16 @@ fn main() -> Result<()> {
         return Err(eyre!("Failed to create tracing_subscriber: {e:#?}"));
     };
 
-    use hex::FromHex;
-    let file = <[u8; 36]>::from_hex(
-        "600010100011410000540900611200611300611400611500500000611306611474500000",
-    )
-    .expect("failed to get bytes");
-    let x = OpCode::process_bytes_to_instructions(&file)?;
+    let bin = include_bytes!("../assets/hi.bin");
+    // let demo1_bin = include_bytes!("../assets/demo1.bin");
+    // let demo2_bin = include_bytes!("../assets/demo2.bin");
+    let x = OpCode::process_bytes_to_instructions(bin)?;
     for (i, ins) in x.iter().enumerate() {
         info!("{:03}: {}", i + 1, ins);
     }
+
+    let mut tgs = Tgs::new();
+    tgs.run_program(&x);
 
     Ok(())
 }

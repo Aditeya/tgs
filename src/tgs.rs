@@ -1,5 +1,7 @@
 #![allow(non_snake_case)]
 
+use tracing::info;
+
 use crate::{op_code::OpCode, registers::Register};
 
 #[derive(Debug)]
@@ -17,6 +19,16 @@ pub struct Tgs {
 }
 
 impl Tgs {
+    pub fn new() -> Self {
+        Self {
+            R: [0, 0, 0, 0, 0, 0, 0, 0],
+            B: [0, 0],
+            D: [0, 0, 0, 0],
+            PC: 0,
+            CR: 0,
+        }
+    }
+
     pub fn register(&self, register: Register) -> u8 {
         match register {
             Register::R0 => self.R[0],
@@ -102,8 +114,13 @@ impl Tgs {
     fn get_cr_as_i8(&self) -> i8 {
         i8::from_le_bytes(self.CR.to_le_bytes())
     }
+    
+    fn increment_pc(&mut self) {
+        self.PC = self.PC.wrapping_add(1);
+    }
 
-    pub fn process_instruction(&mut self, op_code: OpCode) {
+    /// returns true if program_counter should be incremented
+    pub fn process_instruction(&mut self, op_code: OpCode) -> bool {
         match op_code {
             OpCode::ADD(t, sr) => *self.register_mut_ref(t) += *self.register_ref(sr),
             OpCode::SUB(t, sr) => *self.register_mut_ref(t) -= *self.register_ref(sr),
@@ -125,27 +142,52 @@ impl Tgs {
             OpCode::CMPV(t, sv) => self.store_cr_rv(t, sv),
             OpCode::MOVV(t, sv) => *self.register_mut_ref(t) = sv,
 
-            OpCode::BR(v) => self.PC = v,
+            OpCode::BR(v) => {
+                self.PC = v;
+                return false;
+            }
             OpCode::BE(v) => {
                 if self.get_cr_as_i8() == 0 {
-                    self.PC = v
+                    self.PC = v;
+                    return false;
                 }
             }
             OpCode::BNE(v) => {
                 if self.get_cr_as_i8() != 0 {
-                    self.PC = v
+                    self.PC = v;
+                    return false;
                 }
             }
             OpCode::BG(v) => {
                 if self.get_cr_as_i8() > 0 {
-                    self.PC = v
+                    self.PC = v;
+                    return false;
                 }
             }
             OpCode::BL(v) => {
                 if self.get_cr_as_i8() < 0 {
-                    self.PC = v
+                    self.PC = v;
+                    return false;
                 }
             }
+        };
+
+        true
+    }
+
+    pub fn run_program(&mut self, program: &[OpCode]) {
+        while let Some(instruction) = program.get(self.PC as usize) {
+            info!("{:03}: {}", self.PC + 1, instruction);
+            std::thread::sleep(std::time::Duration::from_secs(1));
+            if self.process_instruction(*instruction) {
+                self.increment_pc();
+            }
         }
+    }
+}
+
+impl Default for Tgs {
+    fn default() -> Self {
+        Self::new()
     }
 }
