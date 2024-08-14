@@ -1,15 +1,32 @@
-use ratatui::{buffer::Buffer, layout::Rect, style::{Style, Stylize}, text::Line, widgets::{canvas::{self, Canvas}, StatefulWidget, Widget}};
+
+use ratatui::{buffer::Buffer, layout::Rect, style::{Style, Stylize}, text::{Line, Span}, widgets::{StatefulWidget, Widget}};
 
 
 pub struct TgsDisplay {
-    style: Style,
+    led_on_style: Style,
+    led_off_style: Style,
 }
 
 impl TgsDisplay {
     pub fn new() -> Self {
         Self {
-            style: Style::default().red().on_black(),
+            led_on_style: Style::default().red().on_black(),
+            led_off_style: Style::default().fg(ratatui::style::Color::DarkGray).on_black(),
         }
+    }
+
+    fn led_style_if(&self, on: bool) -> Style {
+        if on {
+            self.led_on_style
+        } else {
+            self.led_off_style
+        }
+    }
+}
+
+impl Default for TgsDisplay {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -31,73 +48,27 @@ impl StatefulWidget for TgsDisplay {
 
         area.width = 9;
 
-        if s1 {
-            Line::styled("  █████ ", self.style).render(area, buf);
-        } else {
-            Line::styled("        ", self.style).render(area, buf);
-        }
+        Line::styled("  █████ ", self.led_style_if(s1)).render(area, buf);
         area.y += 1;
 
-        if s6 || s2 {
-            let mut s = String::with_capacity(9);
-            if s6 {
-                s.push_str("██");
-            } else {
-                s.push_str("  ");
-            }
-            s.push_str("     ");
-            if s2 {
-                s.push_str("██");
-            } else {
-                s.push_str("  ");
-            }
-
-            Line::styled(&s, self.style).render(area, buf);
-            area.y += 1;
-            Line::styled(&s, self.style).render(area, buf);
-        } else {
-            Line::styled("        ", self.style).render(area, buf);
-            area.y += 1;
-            Line::styled("        ", self.style).render(area, buf);
-        }
+        let p1 = Span::styled("██     ", self.led_style_if(s6));
+        let p2 = Span::styled("██", self.led_style_if(s2));
+        Line::default().spans([p1.clone(), p2.clone()]).render(area, buf);
+        area.y += 1;
+        Line::default().spans([p1, p2]).render(area, buf);
         area.y += 1;
 
-        if s7 {
-            Line::styled("  █████ ", self.style).render(area, buf);
-        } else {
-            Line::styled("        ", self.style).render(area, buf);
-        }
+        Line::styled("  █████ ", self.led_style_if(s7)).render(area, buf);
         area.y += 1;
 
-        if s5 || s3 {
-            let mut s = String::with_capacity(9);
-            if s5 {
-                s.push_str("██");
-            } else {
-                s.push_str("  ");
-            }
-            s.push_str("     ");
-            if s3 {
-                s.push_str("██");
-            } else {
-                s.push_str("  ");
-            }
-
-            Line::styled(&s, self.style).render(area, buf);
-            area.y += 1;
-            Line::styled(&s, self.style).render(area, buf);
-        } else {
-            Line::styled("        ", self.style).render(area, buf);
-            area.y += 1;
-            Line::styled("        ", self.style).render(area, buf);
-        }
+        let p1 = Span::styled("██     ", self.led_style_if(s5));
+        let p2 = Span::styled("██", self.led_style_if(s3));
+        Line::default().spans([p1.clone(), p2.clone()]).render(area, buf);
+        area.y += 1;
+        Line::default().spans([p1, p2]).render(area, buf);
         area.y += 1;
 
-        if s4 {
-            Line::styled("  █████ ", self.style).render(area, buf);
-        } else {
-            Line::styled("        ", self.style).render(area, buf);
-        }
+        Line::styled("  █████ ", self.led_style_if(s4)).render(area, buf);
     }
 }
 

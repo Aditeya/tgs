@@ -1,16 +1,14 @@
-use std::{io::stdout, u16};
+use std::io::stdout;
 
-use color_eyre::{eyre::eyre, owo_colors::OwoColorize, Result};
+use color_eyre::{eyre::eyre, Result};
 use ratatui::{
-    backend::CrosstermBackend, buffer::Buffer, crossterm::{
+    backend::CrosstermBackend, crossterm::{
         event::{self, KeyCode, KeyEventKind},
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         ExecutableCommand,
-    }, layout::Rect, style::{Style, Stylize}, text::Line, widgets::{canvas::Canvas, Paragraph, StatefulWidget, Widget}, Terminal
+    }, style::Stylize, widgets::Paragraph, Terminal
 };
-use strum::IntoEnumIterator;
-use tgs::{op_code::OpCode, registers::{Register, TgsDisplayValues}, tgs::Tgs, tgs_display::TgsDisplay};
-use tracing::info;
+use tgs::{op_code::OpCode, registers::Register, tgs::Tgs, tgs_display::TgsDisplay};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
@@ -28,10 +26,9 @@ fn main() -> Result<()> {
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
     terminal.clear()?;
 
-    let mut iter = TgsDisplayValues::iter().cycle();
     let mut tgs = Tgs::new();
-    let bin = include_bytes!("../assets/hi.bin");
-    // let demo1_bin = include_bytes!("../assets/demo1.bin");
+    //let bin = include_bytes!("../assets/hi.bin");
+     let bin = include_bytes!("../assets/demo1.bin");
     // let demo2_bin = include_bytes!("../assets/demo2.bin");
     let program = OpCode::process_bytes_to_instructions(bin)?;
     // for (i, ins) in x.iter().enumerate() {
@@ -72,26 +69,18 @@ fn main() -> Result<()> {
                 if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('a') {
                     *tgs.register_mut_ref(Register::BA) = 1;
                 }
+                if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('b') {
+                    *tgs.register_mut_ref(Register::BB) = 1;
+                }
             }
         } else {
             *tgs.register_mut_ref(Register::BA) = 0;
+            *tgs.register_mut_ref(Register::BB) = 0;
         }
     }
 
     stdout().execute(LeaveAlternateScreen)?;
     disable_raw_mode()?;
-
-
-    // let bin = include_bytes!("../assets/hi.bin");
-    // // let demo1_bin = include_bytes!("../assets/demo1.bin");
-    // // let demo2_bin = include_bytes!("../assets/demo2.bin");
-    // let x = OpCode::process_bytes_to_instructions(bin)?;
-    // for (i, ins) in x.iter().enumerate() {
-    //     info!("{:03}: {}", i + 1, ins);
-    // }
-    //
-    // let mut tgs = Tgs::new();
-    // tgs.run_program(&x);
 
     Ok(())
 }
