@@ -1,4 +1,4 @@
-use std::io::stdout;
+use std::{io::stdout, num::Wrapping};
 
 use color_eyre::{eyre::eyre, Result};
 use ratatui::{
@@ -28,8 +28,8 @@ fn main() -> Result<()> {
 
     let mut tgs = Tgs::new();
     //let bin = include_bytes!("../assets/hi.bin");
-     let bin = include_bytes!("../assets/demo1.bin");
-    // let demo2_bin = include_bytes!("../assets/demo2.bin");
+     //let bin = include_bytes!("../assets/demo1.bin");
+     let bin = include_bytes!("../assets/demo2.bin");
     let program = OpCode::process_bytes_to_instructions(bin)?;
     // for (i, ins) in x.iter().enumerate() {
     //     info!("{:03}: {}", i + 1, ins);
@@ -51,11 +51,11 @@ fn main() -> Result<()> {
                 frame.render_stateful_widget(
                     TgsDisplay::new(),
                     area,
-                    v,
+                    &mut v.0,
                 );
             }
 
-            if let Some(instruction) = program.get(tgs.register(Register::PC) as usize) {
+            if let Some(instruction) = program.get(tgs.register(Register::PC).0 as usize) {
                 tgs.process_instruction(*instruction);
             }
         })?;
@@ -67,15 +67,15 @@ fn main() -> Result<()> {
                 }
 
                 if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('a') {
-                    *tgs.register_mut_ref(Register::BA) = 1;
+                    *tgs.register_mut_ref(Register::BA) = Wrapping(1);
                 }
                 if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('b') {
-                    *tgs.register_mut_ref(Register::BB) = 1;
+                    *tgs.register_mut_ref(Register::BB) = Wrapping(1);
                 }
             }
         } else {
-            *tgs.register_mut_ref(Register::BA) = 0;
-            *tgs.register_mut_ref(Register::BB) = 0;
+            *tgs.register_mut_ref(Register::BA) = Wrapping(0);
+            *tgs.register_mut_ref(Register::BB) = Wrapping(0);
         }
     }
 

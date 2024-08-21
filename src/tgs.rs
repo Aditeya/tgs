@@ -1,5 +1,7 @@
 #![allow(non_snake_case)]
 
+use std::num::Wrapping;
+
 use tracing::info;
 
 use crate::{op_code::OpCode, registers::Register};
@@ -7,33 +9,33 @@ use crate::{op_code::OpCode, registers::Register};
 #[derive(Debug)]
 pub struct Tgs {
     /// R0 to R7 Regisers
-    R: [u8; 8],
+    R: [Wrapping<u8>; 8],
     /// BA & BB Regisers
-    B: [u8; 2],
+    B: [Wrapping<u8>; 2],
     /// D0 to D3 Regisers
-    D: [u8; 4],
+    D: [Wrapping<u8>; 4],
     /// Program Counter
-    PC: u8,
+    PC: Wrapping<u8>,
     /// Comparison Result
-    CR: u8,
+    CR: Wrapping<u8>,
 }
 
 impl Tgs {
     pub fn new() -> Self {
         Self {
-            R: [0, 0, 0, 0, 0, 0, 0, 0],
-            B: [0, 0],
-            D: [0, 0, 0, 0],
-            PC: 0,
-            CR: 0,
+            R: [Wrapping(0); 8],
+            B: [Wrapping(0); 2],
+            D: [Wrapping(0); 4],
+            PC: Wrapping(0),
+            CR: Wrapping(0),
         }
     }
 
-    pub fn tgs_display(&self) -> [u8; 4] {
+    pub fn tgs_display(&self) -> [Wrapping<u8>; 4] {
         self.D
     }
 
-    pub fn register(&self, register: Register) -> u8 {
+    pub fn register(&self, register: Register) -> Wrapping<u8> {
         match register {
             Register::R0 => self.R[0],
             Register::R1 => self.R[1],
@@ -57,7 +59,7 @@ impl Tgs {
         }
     }
 
-    pub fn register_ref(&self, register: Register) -> &u8 {
+    pub fn register_ref(&self, register: Register) -> &Wrapping<u8> {
         match register {
             Register::R0 => &self.R[0],
             Register::R1 => &self.R[1],
@@ -81,7 +83,7 @@ impl Tgs {
         }
     }
 
-    pub fn register_mut_ref(&mut self, register: Register) -> &mut u8 {
+    pub fn register_mut_ref(&mut self, register: Register) -> &mut Wrapping<u8> {
         match register {
             Register::R0 => &mut self.R[0],
             Register::R1 => &mut self.R[1],
@@ -106,71 +108,75 @@ impl Tgs {
     }
 
     fn store_cr_rr(&mut self, target: Register, source: Register) {
-        let v = self.register(target) as i8 - self.register(source) as i8;
-        self.CR = u8::from_le(v.to_le_bytes()[0]);
+        let v = self.register(target).0 as i8 - self.register(source).0 as i8;
+        let v = u8::from_le(v.to_le_bytes()[0]);
+        self.CR = Wrapping(v);
     }
 
     fn store_cr_rv(&mut self, target: Register, source: u8) {
-        let v = self.register(target) as i8 - source as i8;
-        self.CR = u8::from_le_bytes(v.to_le_bytes());
+        let t = self.register(target).0 as i8;
+        let s = source as i8;
+        let v = t.wrapping_sub(s);
+        let v = u8::from_le_bytes(v.to_le_bytes());
+        self.CR = Wrapping(v);
     }
 
     fn get_cr_as_i8(&self) -> i8 {
-        i8::from_le_bytes(self.CR.to_le_bytes())
+        i8::from_le_bytes(self.CR.0.to_le_bytes())
     }
 
     fn increment_pc(&mut self) {
-        self.PC = self.PC.wrapping_add(1);
+        self.PC += 1;
     }
 
     /// returns true if program_counter should be incremented
     pub fn process_instruction(&mut self, op_code: OpCode) {
         match op_code {
-            OpCode::ADD(t, sr) => *self.register_mut_ref(t) += *self.register_ref(sr),
-            OpCode::SUB(t, sr) => *self.register_mut_ref(t) -= *self.register_ref(sr),
-            OpCode::LSH(t, sr) => *self.register_mut_ref(t) <<= *self.register_ref(sr),
-            OpCode::RSH(t, sr) => *self.register_mut_ref(t) >>= *self.register_ref(sr),
-            OpCode::AND(t, sr) => *self.register_mut_ref(t) &= *self.register_ref(sr),
-            OpCode::OR(t, sr) => *self.register_mut_ref(t) |= *self.register_ref(sr),
-            OpCode::XOR(t, sr) => *self.register_mut_ref(t) ^= *self.register_ref(sr),
+            OpCode::ADD(t, sr) => {let reg=self.register(sr);*self.register_mut_ref(t) += reg}
+            OpCode::SUB(t, sr) => {let reg=self.register(sr);*self.register_mut_ref(t) -= reg}
+            OpCode::LSH(t, sr) => {let reg=self.register(sr);*self.register_mut_ref(t) <<= reg.0 as usize},
+            OpCode::RSH(t, sr) => {let reg=self.register(sr);*self.register_mut_ref(t) >>= reg.0 as usize},
+            OpCode::AND(t, sr) => {let reg=self.register(sr);*self.register_mut_ref(t) &= reg}
+            OpCode::OR(t, sr) => {let reg=self.register(sr);*self.register_mut_ref(t) |= reg}
+            OpCode::XOR(t, sr) => {let reg = self.register(sr);*self.register_mut_ref(t) ^= reg},
             OpCode::CMP(t, sr) => self.store_cr_rr(t, sr),
             OpCode::MOV(t, sr) => *self.register_mut_ref(t) = self.register(sr),
 
             OpCode::ADDV(t, sv) => *self.register_mut_ref(t) += sv,
             OpCode::SUBV(t, sv) => *self.register_mut_ref(t) -= sv,
-            OpCode::LSHV(t, sv) => *self.register_mut_ref(t) <<= sv,
-            OpCode::RSHV(t, sv) => *self.register_mut_ref(t) >>= sv,
+            OpCode::LSHV(t, sv) => *self.register_mut_ref(t) <<= sv as usize,
+            OpCode::RSHV(t, sv) => *self.register_mut_ref(t) >>= sv as usize,
             OpCode::ANDV(t, sv) => *self.register_mut_ref(t) &= sv,
             OpCode::ORV(t, sv) => *self.register_mut_ref(t) |= sv,
             OpCode::XORV(t, sv) => *self.register_mut_ref(t) ^= sv,
             OpCode::CMPV(t, sv) => self.store_cr_rv(t, sv),
-            OpCode::MOVV(t, sv) => *self.register_mut_ref(t) = sv,
+            OpCode::MOVV(t, sv) => *self.register_mut_ref(t) = Wrapping(sv),
 
             OpCode::BR(v) => {
-                self.PC = v;
+                self.PC = Wrapping(v);
                 return;
             }
             OpCode::BE(v) => {
                 if self.get_cr_as_i8() == 0 {
-                    self.PC = v;
+                    self.PC = Wrapping(v);
                     return;
                 }
             }
             OpCode::BNE(v) => {
                 if self.get_cr_as_i8() != 0 {
-                    self.PC = v;
+                    self.PC = Wrapping(v);
                     return;
                 }
             }
             OpCode::BG(v) => {
                 if self.get_cr_as_i8() > 0 {
-                    self.PC = v;
+                    self.PC = Wrapping(v);
                     return;
                 }
             }
             OpCode::BL(v) => {
                 if self.get_cr_as_i8() < 0 {
-                    self.PC = v;
+                    self.PC = Wrapping(v);
                     return;
                 }
             }
@@ -180,8 +186,9 @@ impl Tgs {
     }
 
     pub fn run_program(&mut self, program: &[OpCode]) {
-        while let Some(instruction) = program.get(self.PC as usize) {
-            info!("{:03}: {}", self.PC + 1, instruction);
+        while let Some(instruction) = program.get(self.PC.0 as usize) {
+            let pc = self.PC + Wrapping(1);
+            info!("{:03}: {}", pc, instruction);
             std::thread::sleep(std::time::Duration::from_secs(1));
             self.process_instruction(*instruction)
         }
