@@ -2,9 +2,7 @@
 
 use std::num::Wrapping;
 
-use tracing::info;
-
-use crate::{op_code::OpCode, registers::Register};
+use crate::{op_code::OpCode, program::Program, registers::Register};
 
 #[derive(Debug)]
 pub struct Tgs {
@@ -185,10 +183,8 @@ impl Tgs {
         self.increment_pc();
     }
 
-    pub fn run_program(&mut self, program: &[OpCode]) {
-        while let Some(instruction) = program.get(self.PC.0 as usize) {
-            let pc = self.PC + Wrapping(1);
-            info!("{:03}: {}", pc, instruction);
+    pub fn run_program(&mut self, program: &Program) {
+        while let Some(instruction) = program.get_ins(self.PC.0 as usize) {
             std::thread::sleep(std::time::Duration::from_secs(1));
             self.process_instruction(*instruction)
         }

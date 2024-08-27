@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use crate::{
-    error::{Error, Result},
+    error::Error,
     registers::Register,
 };
 
@@ -45,24 +45,6 @@ impl OpCode {
     pub fn is_branching(byte: u8) -> bool {
         const BRANCHING: u8 = 0b0101_0000;
         (byte & BRANCHING) == BRANCHING
-    }
-
-    pub fn process_bytes_to_instructions(bytes: &[u8]) -> Result<Vec<OpCode>> {
-        if bytes.len() % 3 != 0 || bytes.is_empty() {
-            return Err(Error::InvalidProgram);
-        }
-
-        let mut op_codes = Vec::with_capacity(bytes.len() / 3);
-        for window in bytes.chunks_exact(3) {
-            if let (Some(ins), Some(tar), Some(src)) = (window.first(), window.get(1), window.get(2))
-            {
-                op_codes.push([*ins, *tar, *src].try_into()?);
-            } else {
-                return Err(Error::InvalidProgram);
-            }
-        }
-        
-        Ok(op_codes)
     }
 }
 

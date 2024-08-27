@@ -13,4 +13,6 @@ pub enum Error {
     InvalidOpCode(u8),
     #[error("The program is invalid")]
     InvalidProgram,
+    #[error("IO Error: {0}")]
+    IoFailure(#[from] std::io::Error),
 }
