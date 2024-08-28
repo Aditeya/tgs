@@ -1,7 +1,7 @@
 #!/bin/sh
 
 agg_present() {
-	agg -v --theme asciinema --font-family "Iosevka Term Slab,Apple Color Emoji" --font-size 16 --speed 2 $1 $2
+	agg -v --theme asciinema --font-family "Iosevka Term Slab,Apple Color Emoji" --font-size 20 --speed 2 $1 $2
 }
 
 agg_present hi.cast hi.gif &
