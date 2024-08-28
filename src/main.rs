@@ -54,7 +54,7 @@ fn main() -> Result<()> {
         terminal.draw(|frame| {
             let mut area = frame.area();
             frame.render_widget(
-                Paragraph::new("Hello Ratatui! (press 'q' to quit)")
+                Paragraph::new("TGS Emulator | 'q' to quit | 'a' and 'b' for controls")
                     .white()
                     .on_black(),
                 area,
