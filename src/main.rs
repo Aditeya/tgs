@@ -1,5 +1,6 @@
-use std::{io::stdout, num::Wrapping, path::Path, sync::{Arc, RwLock}};
+use std::{io::stdout, num::Wrapping, path::PathBuf, sync::{Arc, RwLock}};
 
+use clap::Parser;
 use color_eyre::{eyre::eyre, Result};
 use ratatui::{
     backend::CrosstermBackend, crossterm::{
@@ -9,6 +10,19 @@ use ratatui::{
     }, style::Stylize, widgets::Paragraph, Terminal
 };
 use tgs::{program::Program, registers::Register, tgs::Tgs, tgs_display::TgsDisplay};
+
+
+/// Simple program to greet a person
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// binary to run
+    #[arg(short, long)]
+    bin: PathBuf,
+    /// print program to assembly
+    #[arg(short, long)]
+    print: bool,
+}
 
 fn main() -> Result<()> {
     color_eyre::install()?;
@@ -21,12 +35,18 @@ fn main() -> Result<()> {
         return Err(eyre!("Failed to create tracing_subscriber: {e:#?}"));
     };
 
+    let args = Args::parse();
+
     let tgs: Arc<RwLock<Tgs>> = Arc::new(RwLock::new(Tgs::new()));
     // let bin = &Path::new("assets/hi.bin");
-    let bin = &Path::new("assets/demo1.bin");
+    // let bin = &Path::new("assets/demo1.bin");
     // let bin = &Path::new("assets/demo2.bin");
-    let program = Program::from_path(bin)?;
-    // println!("{}", program.get_readable_program());
+    let Args { bin, print } = args;
+    let program = Program::from_path(&bin)?;
+    if print {
+        println!("{}", program.get_readable_program());
+        return Ok(());
+    }
     
 
     stdout().execute(EnterAlternateScreen)?;
@@ -70,10 +90,6 @@ fn main() -> Result<()> {
                     &mut v.0,
                 );
             }
-
-            // if let Some(instruction) = program.get_ins(tgs.register(Register::PC).0 as usize) {
-            //     tgs.process_instruction(*instruction);
-            // }
         })?;
 
         if event::poll(std::time::Duration::from_millis(50))? {
